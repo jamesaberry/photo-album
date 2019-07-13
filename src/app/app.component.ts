@@ -1,6 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, HostListener  } from '@angular/core';
 import { interval } from 'rxjs';
 import { AppConfigService } from './services/appConfig';
+
+export enum KEY_CODE {
+  RIGHT_ARROW = 39,
+  LEFT_ARROW = 37
+}
 
 @Component({
   selector: 'app-root',
@@ -16,12 +21,40 @@ export class AppComponent {
   photoNames = this.appConfigService.appConfig.imageNames;
   photoNumAr = [this.getRandomInt(this.photoNames.length)];
   curPhotoNum = 0;
+  maxHistoryLen = 500;
   photoName = this.photoNames[this.curPhotoNum];
   picture = '/assets/photos/' + this.photoName;
   photoDate = this.getPhotoDate(this.photoName);
  
   constructor(private appConfigService: AppConfigService) {
     this.imageStyle['background-image'] = 'url(' + this.picture + ')';
+  }
+    
+  @HostListener('window:keyup', ['$event'])
+  keyEvent(event: KeyboardEvent) {    
+    if (event.keyCode === KEY_CODE.RIGHT_ARROW) {
+      this.increment();
+    }
+
+    if (event.keyCode === KEY_CODE.LEFT_ARROW) {
+      this.decrement();
+    }
+  }
+
+  decrement() {
+    if (this.curPhotoNum < this.photoNumAr.length - 1) {
+      this.curPhotoNum++;
+      this.updatePhoto();
+    }
+  }
+
+  increment() {
+    if (this.curPhotoNum > 0) {
+      this.curPhotoNum--;
+      this.updatePhoto();
+    } else if (this.curPhotoNum == 0) {
+      this.getNextImage();
+    }
   }
 
   getRandomInt(max) {
@@ -66,30 +99,31 @@ export class AppComponent {
     return this.getMonthString(month) + ' ' + day + ' ' + year ;
   }
 
+  updatePhoto() {
+    this.photoName = this.photoNames[this.photoNumAr[this.curPhotoNum]];
+    this.picture = '/assets/photos/' + this.photoName;
+    this.photoDate = this.getPhotoDate(this.photoName);
+    this.imageStyle['background-image'] = 'url(' + this.picture + ')' ;
+  }
+
   getNextImageNum() {
-    if(this.photoNumAr.length > 5) {
+    if(this.photoNumAr.length > this.maxHistoryLen) {
       this.photoNumAr.pop();
     }
     this.photoNumAr.splice(0, 0, this.getRandomInt(this.photoNames.length));
   }
-
   
-  getImage() {
+  getNextImage() {
     /* Only get the next image if we are on the newest image. */
     if(this.curPhotoNum == 0) {
       this.getNextImageNum();
-      this.photoName = this.photoNames[this.photoNumAr[this.curPhotoNum]];
-      this.picture = '/assets/photos/' + this.photoName;
-      this.photoDate = this.getPhotoDate(this.photoName);
-      this.imageStyle['background-image'] = 'url(' + this.picture + ')' ;
+      this.updatePhoto();
     }
-    console.log(this.curPhotoNum);
-    console.log(this.photoNumAr);
   }
   
   ngOnInit() {
     this.counter.subscribe( x => 
-      this.getImage()
+      this.getNextImage()
       )
   }
 }
