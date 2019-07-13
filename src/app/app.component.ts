@@ -14,11 +14,12 @@ export class AppComponent {
   imageStyle = this.appConfigService.appConfig.css.imageStyle;
   counter = interval(this.appConfigService.appConfig.photoDelayMs);
   photoNames = this.appConfigService.appConfig.imageNames;
-  randNum = this.getRandomInt(this.photoNames.length);
-  photoName = this.photoNames[this.randNum];
+  photoNumAr = [this.getRandomInt(this.photoNames.length)];
+  curPhotoNum = 0;
+  photoName = this.photoNames[this.curPhotoNum];
   picture = '/assets/photos/' + this.photoName;
   photoDate = this.getPhotoDate(this.photoName);
-
+ 
   constructor(private appConfigService: AppConfigService) {
     this.imageStyle['background-image'] = 'url(' + this.picture + ')';
   }
@@ -65,12 +66,25 @@ export class AppComponent {
     return this.getMonthString(month) + ' ' + day + ' ' + year ;
   }
 
+  getNextImageNum() {
+    if(this.photoNumAr.length > 5) {
+      this.photoNumAr.pop();
+    }
+    this.photoNumAr.splice(0, 0, this.getRandomInt(this.photoNames.length));
+  }
+
+  
   getImage() {
-    this.randNum = this.getRandomInt(this.photoNames.length);
-    this.photoName = this.photoNames[this.randNum];
-    this.picture = '/assets/photos/' + this.photoName;
-    this.photoDate = this.getPhotoDate(this.photoName);
-    this.imageStyle['background-image'] = 'url(' + this.picture + ')' ;
+    /* Only get the next image if we are on the newest image. */
+    if(this.curPhotoNum == 0) {
+      this.getNextImageNum();
+      this.photoName = this.photoNames[this.photoNumAr[this.curPhotoNum]];
+      this.picture = '/assets/photos/' + this.photoName;
+      this.photoDate = this.getPhotoDate(this.photoName);
+      this.imageStyle['background-image'] = 'url(' + this.picture + ')' ;
+    }
+    console.log(this.curPhotoNum);
+    console.log(this.photoNumAr);
   }
   
   ngOnInit() {
